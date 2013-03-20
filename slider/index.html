@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8">
+    <title>rebuild our sites by MVC</title>
+    <meta name="description" content="An introduction about semantic HTML.">
+    <meta name="author" content="Gu Yiling">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"
+    />
+    <link rel="stylesheet" type="text/css" href="css/reset.css">
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <link rel="stylesheet" type="text/css" href="css/print.css" media="print">
+    <link rel="stylesheet" type="text/css" href="css/zenburn.css">
+    <script type="text/javascript">
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-34177998-1']);
+        _gaq.push(['_trackPageview']);
+
+        (function () {
+            var ga = document.createElement('script');
+            ga.type = 'text/javascript';
+            ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(ga, s);
+        })();
+    </script>
+</head>
+
+<body>
+    <div class="reveal">
+        <div class="slides">
+            <section>
+                 <h1 style="font-size: 80px;">rebuild our sites by MVC</h1>
+                <h2>——Backbone.js的源码探索之路</h2>
+                <p>陈恺睿 / kerry95</p>
+            </section>
+            <section>
+                <section>
+                     <h2 class="exclusive">个人介绍</h2>
+                </section>
+                <section>
+                    <h3>陈恺睿 / kerry95</h3>
+                    <ul class="">
+                        <li class="fragment">梦飞无线工作室 FE</li>
+                        <li class="fragment">电子科技大学在校大三</li>
+                        <li class="fragment">关注Web，专注FE</li>
+                        <li class="fragment">喜欢篮球，也喜欢动漫</li>
+                    </ul>
+                </section>
+            </section>
+            <section>
+                <section>
+                    <h2>Backbone Overview</h2>
+                    <img src="images/backbone-overview.png">
+                </section>
+                <section>
+                    <h2>先了解Backbone.js的backbone</h2>
+                    <ul>
+                        <li class="fragment">继承机制</li>
+                        <li class="fragment">事件通信</li>
+                        <li class="fragment">源码分析，探索文档中了解不到的东西</li>
+                    </ul>
+                </section>
+                <section>
+                    <p>继承的实现</p>
+                    <img src="images/backbone-extend.png">
+                </section>
+                <section>
+                    <p>使用发现的*__super__*实践</p>
+                    <img src="images/backbone-inherit.PNG">
+                </section>
+                <section>
+                    <p>事件通信的内部实现</p>
+                    <img src="images/backbone-events-on.png">
+                </section>
+                <section>
+                    <p class="exclusive">要在一个对象上订阅事件，需要先持有这个对象的引用</p>
+                </section>
+                <section>
+                    <img src="images/backbone-events-trigger.png">
+                </section>
+                <section>
+                    <img src="images/backbone-events-trigger2.png">
+                </section>
+                <section>
+                    <div class="exclusive">
+                        <p>然后探讨一个问题：</p>
+                        <p>一个视图的生命周期里发生了什么。。。</p>
+                    </div>
+                </section>
+                <section>
+                    <div>
+                        <p>作为新视图诞生时需要做什么？</p>
+                        <ul>
+                            <li class="fragment">实例化</li>
+                            <li class="fragment">添加事件</li>
+                            <li class="fragment">渲染模板</li>
+                            <li class="fragment">插入DOM中</li>
+                            <li class="fragment">一窥View构造函数里发生了什么</li>
+                        </ul>
+                    </div>
+                </section>
+                <section>
+                    <img src="images/backbone-view.PNG">
+                </section>
+                <section>
+                    <img src="images/backbone-view-configure-ensureElement.PNG">
+                </section>
+                <section>
+                    <img src="images/backbone-view-delegate-events.PNG">
+                </section>
+                <section>
+                    <p class="pull-right">
+                        <img src="images/view-instance.PNG">
+                    </p>
+                    <ul class="pull-left">
+                        <li>
+                            实例化的时候 <br>才添加model的引用
+                        </li>
+                        <li>
+                            <p>先将元素插入DOM中 <br>再渲染模板的好处</p>
+                            <ul class="fragment">
+                                <li>可以在render时 <br>使用所处DOM结构的信息 <br>（比如坐标位置）</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </section>
+                <section>
+                    <div class="exclusive">
+                        <p>切换别的视图时对旧视图怎么做？</p>
+                        <ul>
+                            <li class="fragment">去除还是隐藏以重用？</li>
+                            <li class="fragment">维护隐藏的视图使代码的复杂度剧增，难以维护，所以去除它</li>
+                        </ul>
+                    </div>
+                </section>
+                <section>
+                    <p class="exclusive">The key to building large applicatin is not to build large application in the first place.</p>
+                </section>
+                <section>
+                    <div>
+                        <p>去除什么？</p>
+                        <ul>
+                            <li class="fragment">只是DOM元素？</li>
+                            <li class="fragment">这是基于MVC的Web app相对于传统site不同的一个地方</li>
+                            <li class="fragment">需要从垃圾回收说起</li>
+                        </ul>
+                    </div>
+                </section>
+                <section>
+                    <div>
+                        <p>JavaScript中的垃圾回收</p>
+                        <ul>
+                            <li class="fragment">全局变量不会被回收（被全局变量直接或间接引用的变量也不会回收）</li>
+                            <li class="fragment">函数返回时，如果此函数的<a href="http://dmitrysoshnikov.com/ecmascript/chapter-1-execution-contexts/">执行上下文</a>的<a href="http://dmitrysoshnikov.com/ecmascript/chapter-2-variable-object/">变量对象</a>没有被引用，该变量对象随着其执行上下文的销毁而销毁（内存可被垃圾回收）</li>
+                            <li class="fragment">
+                                <p>关键：真的没有被引用了吗？</p>
+                                <ul>
+                                    <li class="fragment">函数返回值</li>
+                                    <li class="fragment"><a href="http://dmitrysoshnikov.com/ecmascript/chapter-6-closures/">闭包</a>：<a href="http://dmitrysoshnikov.com/ecmascript/chapter-4-scope-chain/">作用域链</a></li>
+                                    <li class="fragment">对象属性引用的对象，对象的方法（方法上的内部属性[[scope]]）</li>
+                                    <li class="fragment">DOM事件和回调函数（之前源码分析Events时的_callbacks内部属性）</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </section>
+                <section>
+                    <img src="images/leak.PNG">
+                    <ul>
+                        <li class="fragment">如果在销毁view实例时不解除collection上的这个change事件，那么由于collectionA实例内部属性_callbacks里有doSth函数的引用，而doSth函数的作用域链上有collectionA的引用，形成循环引用。</li>
+                        <li class="fragment">陷阱：其实之前有提到过model实例应该在router模块中View实例化的时候传进去的</li>
+                        <li class="fragment">通过AMD封闭的生态圈隔离collection模块和view模块，进而隔离闭包的作用域链上隐含的循环引用</li>
+                    </ul>
+                </section>
+                <section>
+                    <div>
+                        <p>自己动手，丰衣足食</p>
+                        <ul>
+                            <li class="fragment">从DOM中去除元素及DOM事件</li>
+                            <li class="fragment">去除view实例所监听的model/collection事件</li>
+                        </ul>
+                    </div>
+                </section>
+                <section>
+                    <div>
+                        <p>Backbone官方文档：</p>
+                        <img src="images/view-remove1.png">
+                    </div>
+                </section>
+                <section>
+                    <div>
+                        <p>社区里的优秀方案：</p>
+                        <img src="images/view-remove3.png">
+                    </div>
+                </section>
+                <section>
+                    <div>
+                        <p>但其实.....源码是很好的学习途径：</p>
+                        <img src="images/view-remove2.png">
+                    </div>
+                </section>
+                <section>
+                    <div>
+                        <p>自己动手，丰衣足食</p>
+                        <ul>
+                            <li class="fragment">从DOM中去除元素及DOM事件</li>
+                            <li class="fragment">去除view实例所监听的model/collection事件</li>
+                        </ul>
+                        <p class="fragment">只需要...</p>
+                        <p class="fragment"><img src="images/view-close1.png" alt=""></p>
+                    </div>
+                </section>
+                <section>
+                    <div>
+                        <p>自己动手，丰衣足食</p>
+                        <ul>
+                            <li>从DOM中去除元素及DOM事件</li>
+                            <li>去除view实例所监听的model/collection事件</li>
+                            <li>去除view实例所提供的事件</li>
+                        </ul>
+                        <p class="fragment">只需要...</p>
+                        <p class="fragment"><img src="images/view-close2.png" alt=""></p>                        
+                        <p class="fragment">为什么？</p>
+                    </div>
+                </section>
+                <section>
+                    <p><img src="images/events-off.png" alt=""></p>
+                    <p class="fragment">_callbacks中有回调函数和context的引用</p>
+                </section>
+                <section>
+                    <div>
+                        <p>自己动手，丰衣足食</p>
+                        <ul>
+                            <li>从DOM中去除元素及DOM事件</li>
+                            <li>去除view实例所监听的model/collection事件</li>
+                            <li>去除view实例所提供的事件</li>
+                            <li>去除router模块中view实例的引用</li>
+                        </ul>
+                        <p class="fragment"><img src="images/delete-view-instance.png" alt=""></p>
+                    </div>
+                </section>
+            </section>
+            <section>
+                <section>
+                    <p>有序的routes</p>
+                    <p class="fragment"><img src="images/routes.png" alt=""></p>
+                    <p class="fragment">好奇：怎么保证这些路由的匹配顺序的？这可是对象呀</p>
+                </section>
+                <section>
+                    <p><img src="images/router.png" alt=""></p>
+                    <p class="fragment">深入this._bindRoutes()</p>
+                </section>
+                <section>
+                    <p><img src="images/bind-routes.png" alt=""></p>
+                    <p class="fragment">深入_.keys(this.routes)</p>
+                </section>
+                <section>
+                    <p><img src="images/keys.png" alt=""></p>
+                    <p class="fragment">这不科学，居然用for...in！标准里面for...in是不能保证顺序的（虽然JS引擎的实现上按定义属性的顺序遍历的）。要保证顺序的JS数据结构应该用数组，个人觉得Backbone这里做得不好</p>
+                </section>
+            </section>
+            <section>
+                <p>小结：</p>
+                <ul>
+                    <li class="fragment">源码分析是理解优秀框架的好帮手</li>
+                    <li class="fragment">
+                        <p>基于MVC的web app相对于传统的site要更注意内存泄漏</p>
+                        <ul>
+                            <li class="fragment">使用自定义事件通信</li>
+                            <li class="fragment">视图切换频繁</li>
+                        </ul>
+                    </li>
+                </ul>
+            </section>
+            <section>
+                <p style="margin-top:150px; font-size: 180px;">})();
+                </p>
+                <p class="fragment">// 自调用结束</p>
+            </section>
+    </div>
+    <!-- The navigational controls UI -->
+    <aside class="controls"> <a class="left" href="#">&#x25C4;</a>
+<a class="right" href="#">&#x25BA;</a>
+
+        <a class="up" href="#">&#x25B2;</a> <a class="down" href="#">&#x25BC;</a>
+
+    </aside>
+    <!-- Displays presentation progress, max value changes via JS to reflect
+    # of slides -->
+    <div class="progress"><span></span>
+    </div>
+    </div>
+    <!-- Optional libraries for code syntax highlighting and classList support
+    in IE9 -->
+    <script src="js/head.min.js"></script>
+    <script src="js/reveal.min.js"></script>
+    <script>
+        Reveal.initialize({
+            controls: true,
+            progress: true,
+            history: true,
+            rollingLinks: false,
+
+            transition: Reveal.getQueryHash().transition || 'default', // default/cube/page/concave/linear(2d)
+
+            // Optional libraries used to extend on reveal.js
+            dependencies: [{
+                src: 'js/highlight.js',
+                async: true,
+                callback: function () {
+                    window.hljs.initHighlightingOnLoad();
+                }
+            }, {
+                src: 'js/classList.js',
+                condition: function () {
+                    return !document.body.classList;
+                }
+            }, {
+                src: 'js/showdown.js',
+                condition: function () {
+                    return !!document.querySelector('[data-markdown]');
+                }
+            }, {
+                src: 'js/data-markdown.js',
+                condition: function () {
+                    return !!document.querySelector('[data-markdown]');
+                }
+            }, {
+                src: 'socket.io/socket.io.js',
+                async: true,
+                condition: function () {
+                    return window.location.host === 'localhost:1947';
+                }
+            }, {
+                src: 'plugin/speakernotes/client.js',
+                async: true,
+                condition: function () {
+                    return window.location.host === 'localhost:1947';
+                }
+            }, {
+                src: 'js/Hyphenator.js',
+                async: true
+            }]
+        });
+    </script>
+</body>
+
+</html>
